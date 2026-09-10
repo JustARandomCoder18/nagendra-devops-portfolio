@@ -54,3 +54,12 @@ jobs:
         run: |
           docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
           docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
+
+
+      - name: Test SSM connection
+        run: |
+          aws ssm send-command \
+            --region ${{ env.AWS_REGION }} \
+            --instance-ids i-026cda1219a03afe1 \
+            --document-name "AWS-RunShellScript" \
+            --parameters 'commands=["echo GitHub Actions SSM connection successful"]'
