@@ -53,6 +53,7 @@ jobs:
         run: |
           docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
 
+# Temporary SSM connectivity test
       - name: Test SSM connection
         run: |
           aws ssm send-command \
