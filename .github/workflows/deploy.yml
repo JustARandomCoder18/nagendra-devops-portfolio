@@ -53,11 +53,24 @@ jobs:
         run: |
           docker push ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
 
-# Temporary SSM connectivity test
-      - name: Test SSM connection
+      - name: Deploy to EC2
         run: |
           aws ssm send-command \
             --region ${{ env.AWS_REGION }} \
             --instance-ids i-026cda1219a03afe1 \
             --document-name "AWS-RunShellScript" \
-            --parameters 'commands=["echo GitHub Actions SSM connection successful"]'
+            --parameters 'commands=[
+              "set -e",
+              "echo Logging in to ECR...",
+              "aws ecr get-login-password --region us-east-1 | sudo docker login --username AWS --password-stdin 484826611952.dkr.ecr.us-east-1.amazonaws.com",
+              "echo Pulling new portfolio image...",
+              "sudo docker pull 484826611952.dkr.ecr.us-east-1.amazonaws.com/nagendra-devops-portfolio:${{ github.sha }}",
+              "echo Stopping old container...",
+              "sudo docker stop nagendra-devops-portfolio || true",
+              "sudo docker rm nagendra-devops-portfolio || true",
+              "echo Starting new container...",
+              "sudo docker run -d --name nagendra-devops-portfolio --restart unless-stopped -p 8080:80 484826611952.dkr.ecr.us-east-1.amazonaws.com/nagendra-devops-portfolio:${{ github.sha }}",
+              "echo Cleaning unused Docker images...",
+              "sudo docker image prune -af",
+              "echo Deployment completed successfully!"
+            ]'
